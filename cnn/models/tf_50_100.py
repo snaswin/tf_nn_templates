@@ -51,6 +51,13 @@ def compute_accuracy(xs_val, ys_val, keep_val):
 	acc = sess.run(accuracy, feed_dict={xs:xs_val, ys:ys_val, keep:keep_val})
 	return acc
 
+def compute_loss(xs_val, ys_val, keep_val):
+	#global loss
+	global prediction
+	y_prediction = sess.run(prediction, feed_dict={xs:xs_val, keep:keep_val})
+	l = sess.run(loss, feed_dict={ys:ys_val, prediction: y_prediction })
+	return l
+
 
 #Tensorboard utils:
 def var_summaries(var,name):
@@ -158,24 +165,35 @@ prediction = A6_fc2
 #Error between prediction & label
 #loss = cross_entropy(ys, prediction)
 loss = tf.losses.softmax_cross_entropy(onehot_labels=ys, logits=prediction)
-#tf.summary.scalar("pLoss",loss)
-
 
 train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
 
 #Session
 sess = tf.Session()
+writer = tf.summary.FileWriter("./logs/1/", sess.graph)
 
 init = tf.global_variables_initializer()
 sess.run(init)
 
-merged = tf.summary.merge_all()
-writer = tf.summary.FileWriter("./logs/1/", sess.graph)
-
+counter=0
 for i in range(100000):
 	batch_xs, batch_ys = mnist.train.next_batch(100)
+	batch_xs, batch_ys = mnist.test.next_batch(100)
+	
 	sess.run(train_step, feed_dict={xs: batch_xs, ys: batch_ys, keep: 0.5} )
-	if i%5 ==0:
+	if i%10 ==0:
+		#Losses
+		with tf.name_scope("train_loss"):
+			train_loss = compute_loss(mnist.train.images[:1000], mnist.train.labels[:1000], 0.5) 
+			print("Epoch ", i, ", Train Loss =", train_loss)
+			#var_summaries(train_loss, "trainingloss")
+			trainlosssum = tf.summary.scalar("trainloss", train_loss)
+		with tf.name_scope("test_loss"):
+			test_loss = compute_loss(mnist.test.images[:1000], mnist.test.labels[:1000], 1) 
+			print("Epoch ", i, ", Test Loss =", test_loss)
+			#testlosssum = tf.summary.scalar("testloss", test_loss)
+			
+		#Accuracy
 		with tf.name_scope("train_accu"):
 			train_acc = compute_accuracy(mnist.train.images[:1000], mnist.train.labels[:1000], 0.5) 
 		print("Epoch ", i, ", Train Accuracy =", train_acc)
@@ -183,10 +201,13 @@ for i in range(100000):
 			test_accu = compute_accuracy(mnist.test.images[:1000], mnist.test.labels[:1000], 1) 
 			print("Epoch ", i, ", Test Accuracy =", test_accu)
 		print("------------------------------")
-		sum_run = sess.run(merged, feed_dict={xs:batch_xs,ys:batch_ys})
-		print(sess.run(loss))
 		
-		writer.add_summary(sum_run, i)
+		
+		merged = tf.summary.merge_all()
+		sum_run = sess.run(merged, feed_dict={xs:batch_xs,ys:batch_ys})
+		
+		counter = counter + 1
+		writer.add_summary(sum_run, counter)
 		
 
 sess.close()
