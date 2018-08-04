@@ -73,6 +73,14 @@ def var_summaries(var,name):
 			tf.summary.scalar("max",tf.reduce_max(var) )
 			tf.summary.scalar("min", tf.reduce_min(var) )
 			tf.summary.histogram("histogram", var)
+
+def scalar_summaries(var,name):
+	name= 'Summaries_' + str(name)
+	with tf.name_scope(name):
+		with tf.name_scope("Mean"):
+			mean = tf.reduce_mean(var)
+			tf.summary.scalar('mean', mean)
+	
 	
 
 
@@ -160,11 +168,13 @@ with tf.name_scope("FC2"):
 
 prediction = A6_fc2
 
-
-
 #Error between prediction & label
 #loss = cross_entropy(ys, prediction)
-loss = tf.losses.softmax_cross_entropy(onehot_labels=ys, logits=prediction)
+with tf.name_scope("Xentropy"):
+	loss = tf.losses.softmax_cross_entropy(onehot_labels=ys, logits=prediction)
+
+#tf.summary.scalar("Xentropy", loss2)
+	#scalar_summaries(loss2, "Xentropy")
 
 train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
 
@@ -186,14 +196,16 @@ for i in range(100000):
 		with tf.name_scope("train_loss"):
 			train_loss = compute_loss(mnist.train.images[:1000], mnist.train.labels[:1000], 0.5) 
 			print("Epoch ", i, ", Train Loss =", train_loss)
-			#var_summaries(train_loss, "trainingloss")
+		#var_summaries(train_loss, "trainingloss")
 			trainlosssum = tf.summary.scalar("trainloss", train_loss)
 		with tf.name_scope("test_loss"):
 			test_loss = compute_loss(mnist.test.images[:1000], mnist.test.labels[:1000], 1) 
 			print("Epoch ", i, ", Test Loss =", test_loss)
-			#testlosssum = tf.summary.scalar("testloss", test_loss)
+			testlosssum = tf.summary.scalar("testloss", test_loss)
 			
 		#Accuracy
+		#tf.summary.scalar("Xentropy", loss2)
+
 		with tf.name_scope("train_accu"):
 			train_acc = compute_accuracy(mnist.train.images[:1000], mnist.train.labels[:1000], 0.5) 
 		print("Epoch ", i, ", Train Accuracy =", train_acc)
