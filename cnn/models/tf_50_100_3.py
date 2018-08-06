@@ -185,12 +185,12 @@ with tf.name_scope("Visualize_weights_conv2"):
 	c_shape = W_c.get_shape().as_list()
 	W_d = tf.reshape(W_c, [c_shape[2], c_shape[0], c_shape[1], 1])
 	tf.summary.image("Visualize_kernels_conv2", W_d, 1024)
+	
 		
 #-----------------------------------------------------------------------
 #	Flatten
 #-----------------------------------------------------------------------
 A2_flatten = flatten(A2_pool)
-
 
 #-----------------------------------------------------------------------
 #	fc1
