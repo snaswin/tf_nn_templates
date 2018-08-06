@@ -116,7 +116,7 @@ with tf.name_scope("Conv2"):
 	W_conv2 = weight([3,3,256,128])
 	b_conv2 = bias([128])
 	A2_conv = tf.nn.relu(conv2d(A1_pool, W_conv2) + b_conv2 )
-	var_summaries(A2_conv, "A2_conv")
+	#var_summaries(A2_conv, "A2_conv")
 
 ##pool2
 with tf.name_scope("Pool2"):		
@@ -127,7 +127,7 @@ with tf.name_scope("Conv3"):
 	W_conv3 = weight([3,3,128,32])
 	b_conv3 = bias([32])
 	A3_conv = tf.nn.relu(conv2d(A2_pool, W_conv3) + b_conv3 )
-	var_summaries(A3_conv, "A3_conv")
+	#var_summaries(A3_conv, "A3_conv")
 
 ##pool3
 with tf.name_scope("Pool3"):		
@@ -138,7 +138,7 @@ with tf.name_scope("Conv4"):
 	W_conv4 = weight([3,3,32,16])
 	b_conv4 = bias([16])
 	A4_conv = tf.nn.relu(conv2d(A3_pool, W_conv4) + b_conv4 )
-	var_summaries(A4_conv, "A4_conv")
+	#var_summaries(A4_conv, "A4_conv")
 
 ##pool4
 with tf.name_scope("Pool4"):		
@@ -178,6 +178,15 @@ with tf.name_scope("Xentropy"):
 
 train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
 
+#Accuracy:
+with tf.name_scope("Accuracy"):
+	correct = tf.equal(tf.argmax(ys,1) , tf.argmax(prediction, 1))
+	
+	accuracy = tf.reduce_mean(tf.cast(correct, tf.float32) )
+tf.summary.scalar("acc", accuracy)
+print("CNN model struct complete")
+
+##----------------------------------------------------------------------##
 #Session
 sess = tf.Session()
 writer = tf.summary.FileWriter("./logs/1/", sess.graph)
@@ -185,7 +194,7 @@ writer = tf.summary.FileWriter("./logs/1/", sess.graph)
 init = tf.global_variables_initializer()
 sess.run(init)
 
-counter=0
+#counter=0
 for i in range(100000):
 	batch_xs, batch_ys = mnist.train.next_batch(100)
 	batch_xs, batch_ys = mnist.test.next_batch(100)
@@ -194,32 +203,33 @@ for i in range(100000):
 	if i%10 ==0:
 		#Losses
 		with tf.name_scope("train_loss"):
-			train_loss = compute_loss(mnist.train.images[:1000], mnist.train.labels[:1000], 0.5) 
+			#train_loss = compute_loss(mnist.train.images[:1000], mnist.train.labels[:1000], 0.5) 
+			train_loss = sess.run(accuracy, feed_dict={xs: batch_xs, ys: batch_ys, keep: 0.5})
 			print("Epoch ", i, ", Train Loss =", train_loss)
 		#var_summaries(train_loss, "trainingloss")
-			trainlosssum = tf.summary.scalar("trainloss", train_loss)
-		with tf.name_scope("test_loss"):
-			test_loss = compute_loss(mnist.test.images[:1000], mnist.test.labels[:1000], 1) 
-			print("Epoch ", i, ", Test Loss =", test_loss)
-			testlosssum = tf.summary.scalar("testloss", test_loss)
+			#trainlosssum = tf.summary.scalar("trainloss", train_loss)
+		#with tf.name_scope("test_loss"):
+			#test_loss = compute_loss(mnist.test.images[:1000], mnist.test.labels[:1000], 1) 
+			#print("Epoch ", i, ", Test Loss =", test_loss)
+			#testlosssum = tf.summary.scalar("testloss", test_loss)
 			
 		#Accuracy
 		#tf.summary.scalar("Xentropy", loss2)
 
 		with tf.name_scope("train_accu"):
 			train_acc = compute_accuracy(mnist.train.images[:1000], mnist.train.labels[:1000], 0.5) 
-		print("Epoch ", i, ", Train Accuracy =", train_acc)
-		with tf.name_scope("test_accu"):
-			test_accu = compute_accuracy(mnist.test.images[:1000], mnist.test.labels[:1000], 1) 
-			print("Epoch ", i, ", Test Accuracy =", test_accu)
+			print("Epoch ", i, ", Train Accuracy =", train_acc)
+		#with tf.name_scope("test_accu"):
+		#	test_accu = compute_accuracy(mnist.test.images[:1000], mnist.test.labels[:1000], 1) 
+		#	print("Epoch ", i, ", Test Accuracy =", test_accu)
 		print("------------------------------")
 		
 		
 		merged = tf.summary.merge_all()
 		sum_run = sess.run(merged, feed_dict={xs:batch_xs,ys:batch_ys})
 		
-		counter = counter + 1
-		writer.add_summary(sum_run, counter)
+		#counter = counter + 1
+		writer.add_summary(sum_run, i)
 		
 
 sess.close()
